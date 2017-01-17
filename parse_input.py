@@ -22,7 +22,7 @@ import os.path
 from bs4 import BeautifulSoup
 
 
-# little_youtube keys
+# Read Twitter API keys from file
 with open("./keys.json") as f:
 	keys = json.load(f)
 
@@ -30,7 +30,6 @@ API_KEY = keys["TWITTER_API_KEY"]
 API_SECRET = keys["TWITTER_API_SECRET"]
 OAUTH_TOKEN = keys["TWITTER_OAUTH_TOKEN"]
 OAUTH_SECRET = keys["TWITTER_OAUTH_SECRET"]
-BEARER_TOKEN = keys["TWITTER_BEARER_TOKEN"]
 
 twitter = twython.Twython(API_KEY, API_SECRET, OAUTH_TOKEN, OAUTH_SECRET)
 
