@@ -35,4 +35,7 @@ which generates text with ```p``` paragraphs of approximately ```n``` words each
  * The training target can be a folder of .txt files or a single .txt file. You can also pass an optional ```--depth``` argument with a value of 1,2 or 3 to determine how far back the script should look when looking for n-grams, ie. this is a value for n-1.
  * The positional argument when generating can be either the input used to train the generator, as above, or the .cache built during training.
  * When run without a positional argument, ie. ```python text_generator.py``` the program provides a simple UI to run a previously trained generator.
- * The parse_input.py module contains some ad-hoc functions for fetching input texts from various websites inclusing Twitter timelines and famous poems.
+
+ 
+## Requirements
+The parse_input.py module contains some ad-hoc functions for parsing input files inside a folder as well as from various websites to format suitable for training. It requires [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/bs4/doc/) and [Twython](https://twython.readthedocs.io/en/latest/usage/install.html) to work.
