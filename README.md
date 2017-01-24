@@ -23,7 +23,7 @@ First train the generator with a sample text. A set of popular fairytales is pro
 ```
 python text_generator.py data/training/fairytales --train
 ```
-This creates a .cache file, which is an sqlite database of the n-grams parsed from the source texts.
+This creates a fairytales.cache file in the data folder, which is an sqlite database of the n-grams parsed from the source texts.
 
 Then, run
 ```
@@ -33,5 +33,6 @@ which generates text with ```p``` paragraphs of approximately ```n``` words each
 
 ### Additional Notes
  * The training target can be a folder of .txt files or a single .txt file. You can also pass an optional ```--depth``` argument with a value of 1,2 or 3 to determine how far back the script should look when looking for n-grams, ie. this is a value for n-1.
- * The first argument when generating can be either the folder used to train the generator, as above, or the .cache built during training.
+ * The positional argument when generating can be either the input used to train the generator, as above, or the .cache built during training.
  * When run without a positional argument, ie. ```python text_generator.py``` the program provides a simple UI to run a previously trained generator.
+ * The parse_input.py module contains some ad-hoc functions for fetching input texts from various websites inclusing Twitter timelines and famous poems.
