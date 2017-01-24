@@ -20,6 +20,7 @@ import json
 import sys
 import argparse
 import codecs
+import math
 import random
 import glob
 import os
@@ -56,13 +57,11 @@ class MarkovGenerator():
 			print "ERROR: Neither a training file, nor an existing cache file was specified."
 			sys.exit()
 
-		# If the input argument was specified, check whether a file or folder with that
-		# name actually exists, define a location for the cache and, if input is a folder,
-		# dump its contents to a temporary file.
+		# If the input argument was specified, define a location for the cache under the data folder:
+		# keep the basename and change the extension.
 		if self.input:
-			# Set path to for the cache: keep the basename and change the extension.
 			filename = os.path.basename(self.input)
-			self.cache = "training-data/" + os.path.splitext(filename)[0] + ".cache"
+			self.cache = "data/" + os.path.splitext(filename)[0] + ".cache"
 
 		
 	def ngrams(self):
@@ -222,7 +221,7 @@ class MarkovGenerator():
 		"""Prints a list of existing .cache files and asks for user input on which
 		generator to use.
 		Args:
-			files (list): a list of filepaths to .cache files in training-data
+			files (list): a list of filepaths to .cache files in the data folder
 		Return:
 			the path to the .cache the user selected
 		"""
@@ -254,7 +253,7 @@ if __name__ == "__main__":
 
 	# If no input file present, list the existing trained cache files and ask for user input.
 	if not args.input:
-		files = glob.glob("training-data/*.cache")
+		files = glob.glob("data/*.cache")
 		path_to_cache = MarkovGenerator.show_menu(files)
 
 		# Generate a text of random length.
