@@ -2,7 +2,14 @@
 # -*- coding: utf-8 -*-
 
 """
-Parse input from various sources to the format used as training data for a random text generator.
+A collection of ad-hoc functions for parsing input from various sources
+(Twitter timelines, folders containing .txt files, Steam game descriptions)
+to the format text_generator.py uses as training data.
+
+
+Changelog
+2.2.2017
+ * Added option to parse Steam game descriptions
 
 3.1.2017
 """
@@ -10,7 +17,6 @@ Parse input from various sources to the format used as training data for a rando
 
 
 import random
-import sqlite3
 import codecs
 import argparse
 import json
@@ -22,23 +28,22 @@ import os
 from bs4 import BeautifulSoup
 
 
-
-# Connect to Twitter for fetching timelines, requires valid keys in keys.json.
-
-with open("./keys.json") as f:
+# Parsing Twitter timelines requires access tokens. These are only used in
+# get_recent_timeline() and get_timeline_history()
+with open("keys.json") as f:
 	keys = json.load(f)
 
-API_KEY = keys["TWITTER_API_KEY"]
-API_SECRET = keys["TWITTER_API_SECRET"]
-OAUTH_TOKEN = keys["TWITTER_OAUTH_TOKEN"]
-OAUTH_SECRET = keys["TWITTER_OAUTH_SECRET"]
+API_KEY = keys["API_KEY"]
+API_SECRET = keys["API_SECRET"]
+OAUTH_TOKEN = keys["OAUTH_TOKEN"]
+OAUTH_SECRET = keys["OAUTH_SECRET"]
 
-# Check if valid keys were found.
-if API_KEY == API_SECRET:
+# Check if non-empty keys were found.
+if API_KEY == API_SECRET == OAUTH_TOKEN == OAUTH_SECRET:
 	print "WARNING: couldn't find proper Twitter access tokens in keys.json. Fetching timelines disabled."
 
+twitter = twython.Twython(API_KEY, API_SECRET, OAUTH_TOKEN, OAUTH_SECRET)
 
-twitter = twython.Twython(API_KEY, API_SECRET, OAUTH_TOKEN, OAUTH_SECRET) # this will pass even if tokens are empty, fetching timelines will throw a TwythonAuthError 
 
 
 ##############
@@ -130,7 +135,7 @@ def filter_tweet(tweet):
 	Remove urls and mentions.
  	"""
 	split = tweet["text"].split()
-	text = " ".join( [word for word in split if not any(item in word for item in ["http://", "https://", "@"])] )
+	text = " ".join( [word for word in split if not any(item in word for item in ("http://", "https://", "@", "#"))] )
 	text = text.replace("&amp;", "&")
 	return text
 
@@ -143,7 +148,7 @@ def dump_tweets(tweets):
 	"""
 	#tweets = get_timeline_history(screen_name, n)
 	texts = [filter_tweet(t) for t in tweets]  # drop urls and mentions
-	texts = [t for t in texts if len(t.split()) > 3]  # drop short tweets
+	#texts = [t for t in texts if len(t.split()) > 3]  # drop short tweets
 	n = len(texts)
 	texts = " ".join(texts)
 
@@ -161,9 +166,11 @@ def dump_tweets(tweets):
 	# create a new directory if one doesn't exist already
 	name = tweets[0]["user"]["screen_name"]
 	path = "data/training/{0}".format(name)
+	new_path = False
 	if not os.path.isdir(path):
 		os.mkdir(path)
 		print "Created a new directory", path
+		new_path = True
 
 	# Store the tweets.
 	file = "data/training/{0}/{0}.txt".format(name)
@@ -171,16 +178,23 @@ def dump_tweets(tweets):
 		f.write(texts)
 
 	# Store tweet id of the latest tweet to separate file
-	file = "data/training/{}/timeline.dat".format(name)
-	with open(file, "w") as f:
+	timeline_file = "data/training/{}/timeline.dat".format(name)
+	with open(timeline_file, "w") as f:
 		f.write("This file contains the id of the latest tweet fetched from Twitter.\n{}".format(tweets[0]["id"]))
 
-	print "Created a dump of {} tweets between {} and {} at {}.".format(n, start, end, file)
+
+	# Set an info message based on wheter tweets were added to an existing file or a new one was created.
+	msg = "Added {} tweets between {} and {} to {}".format(n, start, end, file)
+	if new_path:
+		msg = "Created a dump of {} tweets between {} and {} at {}.".format(n, start, end, file)
+
+	print msg
 
 
 ###################
 # Washington Post #
 ###################
+# Editorials from https://www.washingtonpost.com/opinions/the-posts-view
 
 def get_article_text(url):
 	"""Parse the url of an article to a text with links removed."""
@@ -219,6 +233,7 @@ def parse_headlines():
 #########
 # Poems #
 #########
+# Famous poems from https://allpoetry.com/classics/famous_poems
 
 def get_poem_text(url):
 	"""Parse a poem from the specified url and store it to a file under data/training/poems."""
@@ -257,22 +272,103 @@ def parse_poem_urls():
 			get_poem_text(poem_url)
 
 
+###########################
+# Steam game descriptions #
+###########################
+# Game descriptions from the Steam storefront
+
+def get_app_ids():
+	"""Fetch a list of games on the Steam store and their descriptions."""
+	r = requests.get("http://api.steampowered.com/ISteamApps/GetAppList/v2")
+	app_list = r.json()
+	app_list = app_list["applist"]["apps"]
+	app_ids = [ app["appid"] for app in app_list if (not any( [token in app["name"] for token in ("Trailer", "Soundtrack", "OST", "Demo")] ) and app["appid"] >= 10) ]
+
+	#return (id_ for id_ in app_ids)
+	return app_ids
+
+
+def store_app_names():
+	r = requests.get("http://api.steampowered.com/ISteamApps/GetAppList/v2")
+	app_list = r.json()
+	app_list = app_list["applist"]["apps"]
+	keywords = ("Trailer", "Soundtrack", "OST", "Demo", "DLC", "SDK", "Beta", "Map Pack")
+
+	app_ids = [ app["name"] for app in app_list if (not any( [token in app["name"] for token in keywords] ) and app["appid"] >= 10) ]
+
+	with open("data/training/steam/app_names.dat", "w") as f:
+		for app in app_ids:
+			name = app.encode("utf8")
+			f.write(name + "\n")
+	
+
+def get_app_description(id_):
+	"""Fetch a game description matching an appid from store.steampowered.com/api.
+	Note: this is an undocumented API and may change any time.
+	"""
+	url = "http://store.steampowered.com/api/appdetails?appids={}&cc=us&l=english".format(id_)
+	r = requests.get(url)
+	response = r.json()[str(id_)]
+
+	if response["success"] and response["data"]["type"] == "game":
+		name = response["data"]["name"]
+		description = response["data"]["detailed_description"]
+
+		return name, description
+
+
+def dump_descriptions(ids):
+	"""Fetch description to a random sample of n items from the Steam database and store to
+	data/training/steam.
+	Arg:
+		ids (list): list of app ids of games whose descriptions to fetch
+	"""
+	#ids = random.sample(get_app_ids(), n)
+
+	count = 0
+	error_count = 0
+	for id_ in ids:
+		try:
+			title, text = get_app_description(id_)
+			count += 1
+			title = title.replace("/", "-")
+			print title
+			soup = BeautifulSoup(text, "lxml")
+			# replace <br> tags with \ns
+			for br in soup.find_all("br"):
+				br.replace_with("\n")
+
+			# Wrap various html tags in the description with newlines
+			for tag in soup.select("h2.bb_tag, .bb_ul, h1"):
+				tag.replace_with("\n" + tag.text + "\n")
+
+			path = "data/training/steam/" + title + ".txt"
+			with codecs.open(path, "w", "utf8") as f:
+				f.write(soup.text)
+
+		except TypeError: # thrown if get_app_description returned None
+			error_count += 1
+			continue
+
+	print "Succesfully parsed {} titles with {} failed titles".format(count, error_count)
+		
+
 
 
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description="Parses various input to training data for text_generator.py")
-	parser.add_argument("--parse-tweets", help="Store new tweets from the specified Twitter screen name to data/training/screen_name.", metavar="screen_name")
-	parser.add_argument("--parse-wp", help="Store latest Washington Post editorials to data/training/washington_post.", action="store_true")
+	parser.add_argument("--tweets", help="Store new tweets from the specified Twitter screen name to data/training/screen_name.", metavar="screen_name")
+	parser.add_argument("--wp", help="Store latest Washington Post editorials to data/training/washington_post.", action="store_true")
+	parser.add_argument("--steam", help="Store n random Steam game descriptions to data/training/steam", metavar="n", type=int)
 
 	args = parser.parse_args()
-	#print args
 
 
-	if args.parse_tweets:
+	if args.tweets:
 		# Check whether there already is a folder for this username and either append
 		# the most recent tweets to it, or initialize a new file with the last 50 pages of tweet results.
-		screen_name = args.parse_tweets.lstrip("@")
+		screen_name = args.tweets.lstrip("@")
 		path = "data/training/" + screen_name
 		if not os.path.isdir(path):
 			tweets = get_timeline_history(screen_name, 50)
@@ -288,6 +384,10 @@ if __name__ == "__main__":
 			tweets = get_recent_timeline(screen_name, id_, 200)
 			dump_tweets(tweets)
 
-
-	elif args.parse_wp:
+	elif args.wp:
 		parse_headlines()
+
+	elif args.steam:
+		ids = get_app_ids()
+		sample = random.sample(ids, args.steam)
+		dump_descriptions(sample)

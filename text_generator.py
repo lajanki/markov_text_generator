@@ -10,7 +10,20 @@ based on
 https://gist.github.com/agiliq/131679#file-gistfile1-py
 https://github.com/codebox/markov-text
 
+Changelog
+2.2.2017
+ * Minor sentence generation tweaks: added option to continue generating until a
+   punctuation token is encoutered.
+ * Added an option to provide a custom seed string to generate_markov_text
+   as an alternative to choosing it randomly from the database.
+ * Database rows are no longer unique so when choosing successors from the database
+   probabilities are now properly considered, as they should be in a Markov process.
+   Ie. if a word has several matches with identical rows, it's more likely that
+   that row gets chosen.
+ * Training now ignores some special characters like "@" and "http"
+
 3.1.2017
+ * Initial version
 """
 
 
@@ -73,6 +86,7 @@ class MarkovGenerator():
 		# Read the training data from file and split by words.
 		with codecs.open(self.input, "r", "utf8") as f:
 			train_data = f.read().split()
+			train_data = [word for word in train_data if not any(item in word for item in ("http://", "https://", "@", "#"))] # remove urls and email addresses
 
 		#n = self.depth
 		if len(train_data) < self.depth:
@@ -101,14 +115,10 @@ class MarkovGenerator():
 		con = lite.connect(self.cache)
 		cur = con.cursor()
 
-		# Generate the SQL for "CREATE TABLE ngrams (w1 TEXT NOT NULL, w2 TEXT NOT NULL, ... wn TEXT NOT NULL, UNIQUE(w1, w2, ..., wn) )",
+		# Generate the SQL for "CREATE TABLE ngrams (w1 TEXT NOT NULL, w2 TEXT NOT NULL, ... wn TEXT NOT NULL)",
 		# column names can't be targeted for parameter substitution.
-		colnames = ["w" + str(i) for i in range(1, self.depth+1)]  # db column names w1, w2, ... wn
-
-		sql = "CREATE TABLE ngrams ("
-		for col in colnames:
-			sql += col + " TEXT NOT NULL, "
-		sql += "UNIQUE(" + ", ".join(colnames) + ") )"
+		coldefs = ["w{} TEXT NOT NULL".format(i) for i in range(1, self.depth+1)]
+		sql = "CREATE TABLE ngrams (" + ", ".join(coldefs) + ")"
 
 		print "Building a database with depth {}...".format(self.depth-1)
 		with con:
@@ -119,7 +129,6 @@ class MarkovGenerator():
 				try:
 					subs = ", ".join( ["?" for i in range(self.depth)] )  # a string of "?, ?, ..., ?" for parameter substitution
 					sql = "INSERT INTO ngrams VALUES ({})".format(subs)
-					col_values = () 
 					cur.execute(sql, tuple(ngram))
 
 				# Skip ngrams that are already in the database.
@@ -132,11 +141,15 @@ class MarkovGenerator():
 			print "Temporary files deleted."
 
 		
-	def generate_markov_text(self, size = 25):
+	def generate_markov_text(self, size = 25, seed = None, complete_sentence = False):
 		"""Generates a string of length size by randomly selecting words from the cache database such that
 		the first n-1 words of the row fetched matches the last n-1 words of the current generated text.
 		Arg:
 			size (int): number of words the text should contain.
+			seed (string): the initial word where to start the generation from. If not set, the seed will be selected
+				from the database. If no successor is found to the seed, a ValueError is thrown
+			complete_sentence (boolean): whether to continue adding words past size to the sentence until a punctuation
+				character or a capitalized word is encoutered.
 		Return:
 			the generated text
 		"""
@@ -147,27 +160,60 @@ class MarkovGenerator():
 		con = lite.connect(self.cache)
 		cur = con.cursor()
 
-		# Randomly select 1 row from the database to act as a seed for text generation.
 		words = []
 		with con:
 			cur.execute("SELECT * FROM ngrams ORDER BY RANDOM() LIMIT 1")
 			row = cur.fetchone()
-			words.extend(row[:-1])
 			depth = len(row)
+
+			# Set the initial words for the generated text: either the row fetched or any
+			# input passed in through the seed parameter.
+			if seed:
+				split = seed.split()
+				# Check if the seed is long enough:
+				if len(split) < depth - 1:
+					raise ValueError("Invalid seed: Need at least {} words, received \"{}\"".format(depth-1, seed))
+
+				# Check wheter the database contains a row starting with the last depth-1 words of the seed
+				row = split[-(depth-1):]  # the last depth-1 words
+				cols = " AND ".join( ["w{} = ?".format(i) for i in range(1, depth)] ) # format the SQL for a "...WHERE w1 = ? AND w2 = ? ... AND w(n-1) = ?" query
+				sql = "SELECT * FROM ngrams WHERE {}".format(cols)
+				cur.execute(sql, row)
+				data = cur.fetchone()
+				if not data:
+					raise ValueError("Invalid seed: database doesn't contain a row beginning with {}".format(row))
+
+				words.extend(split)  # Set the whole seed as the initial words for the generated text,
+				row = split[-depth:]  # ...but only pass the last depth words to the generation algorithm.
+			else:
+				words.extend(row)
+			
 
 			# Fetch rows and add new words one at a time until text length == size.
 			# The first n-1 words of the next row should match to the n-1 last words
 			# of the previous row.
+			cols = " AND ".join( ["w{} = ?".format(i) for i in range(1, depth)] )  
+			sql = "SELECT * FROM ngrams WHERE {} ORDER BY RANDOM() LIMIT 1".format(cols)
 			while len(words) < size:
-				# Format the SQL for a ...WHERE w1 = ? AND w2 = ? ... AND w(n-1) = ?
-				cols = " AND ".join( ["w{} = ?".format(i) for i in range(1, depth)] )  # (range(1,n) ends at n-1!)
-				sql = "SELECT * FROM ngrams WHERE {} ORDER BY RANDOM() LIMIT 1".format(cols)
-				cur.execute(sql, tuple(row[1:]))
+				cur.execute(sql, row[1:])
 				row = cur.fetchone()
-				words.append(row[-1])  # add the last word of the fetched row to words
+				words.append(row[-1])  # add the last word as the next word generated
+
+
+			# Continue adding words until one that ends with a sentence ending character.
+			if complete_sentence:
+				last = words[-1]
+				while not last.endswith((".", "!", "?", "...", ":", ";", ",", "-", u"…")):
+					cur.execute(sql, tuple(row[1:]))
+					row = cur.fetchone()
+					next_ = row[-1]
+
+					words.append(next_)
+					last = next_
+		
 
 		# Return a properly capitalized and punctuated string.
-		return MarkovGenerator.normalize(words)
+		return MarkovGenerator.cleanup(words)
 
 
 	####################
@@ -187,33 +233,47 @@ class MarkovGenerator():
 
 
 	@staticmethod
-	def normalize(sent):
-		"""Normalize a sentence by capitalizing the first letter and any letters following end of sentences.
-		TODO:
-			* don't end the sentence with conjunctions like "and".
-			* ignore paranthesis? randomly add missinf paranthesis?, replace ( with a comma?
+	def cleanup(tokens):
+		"""cleanup a sentence by capitalizing the first letter, remove conjuctions like "and" and "to"
+		from the end and add a punctuation mark.
 		Arg:
-			sent (list): the sentence to normalize as a list of words
+			tokens (list): the sentence to normalize as a list of words
 		Return:
 			the normalized sentence as a string
 		"""
 		# Capitalize the first word (calling capitalize() on the whole string would
 		# decapitalize everyting else).
-		sent[0] = sent[0].capitalize()
+		tokens[0] = tokens[0].capitalize()
+		text = " ".join(tokens)
+		text = text.lstrip(" -*")
 		
-		# Randomly select a punctuation token from [., !, ?, ...] to append at the end.
-		rand = random.random()
-		if rand < 0.81:
-			end = "."  # "." should have the greatest change of getting selected
-		else:
-			end = random.choice(("!", "?", "..."))  # choose evenly between the rest
+		# Replace opening parathesis with a comma and remove closing paranthesesis and
+		# replace other inconvenient characters.
+		replacements = [
+			(" (", ","),
+			("(", ""), # in case the first character of a sentence is "("
+			(")", ""),
+			("\"", ""),
+			(u"“", ""),
+			(u"”", ""),
+			(u"”", ""),
+			(u"…", "...")
+		]
+		for item in replacements:
+			text = text.replace(item[0], item[1])
 
-		# Check that sent doesn't already end with a punctuation.
-		sent[-1] = sent[-1].rstrip(",:- ")  # strip any non sentence ending punctuation
-		if not sent[-1].endswith((".", "!", "?", "...")):
-			sent[-1] = sent[-1] + end
 
-		return " ".join(sent)
+		text = text.rstrip(",;:- ")
+		if not text.endswith((".", "!", "?", "...")):
+			rand = random.random()
+			if rand < 0.81:
+				end = "."  # "." should have the greatest change of getting selected
+			else:
+				end = random.choice(("!", "?", "..."))  # choose evenly between the rest
+
+			text += end
+
+		return text
 
 
 	@staticmethod
@@ -248,7 +308,6 @@ if __name__ == "__main__":
 	parser.add_argument("--depth", help="How many previous words should be considered when generating new text. Valid values are 1,2 and 3.",
 		nargs="?", metavar="depth", type=int, default=1, const=1, choices=[1,2,3])
 	args = parser.parse_args()
-	#print args
 
 
 	# If no input file present, list the existing trained cache files and ask for user input.
