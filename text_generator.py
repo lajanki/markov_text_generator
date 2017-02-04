@@ -11,12 +11,15 @@ https://gist.github.com/agiliq/131679#file-gistfile1-py
 https://github.com/codebox/markov-text
 
 Changelog
+4.2.2017
+ * Added an INDEX to the database to increase lookup performance. Apparently
+   the UNIQUE constarint also came with an INDEX.
 2.2.2017
  * Minor sentence generation tweaks: added option to continue generating until a
    punctuation token is encoutered.
  * Added an option to provide a custom seed string to generate_markov_text
    as an alternative to choosing it randomly from the database.
- * Database rows are no longer unique so when choosing successors from the database
+ * Database rows are no longer UNIQUE so when choosing successors from the database
    probabilities are now properly considered, as they should be in a Markov process.
    Ie. if a word has several matches with identical rows, it's more likely that
    that row gets chosen.
@@ -131,9 +134,11 @@ class MarkovGenerator():
 					sql = "INSERT INTO ngrams VALUES ({})".format(subs)
 					cur.execute(sql, tuple(ngram))
 
-				# Skip ngrams that are already in the database.
-				except lite.IntegrityError:
-					continue
+			# Create an index from the first n-1 columns.
+			print "Creating a table index"
+			index_cols = ", ".join(["w{}".format(i) for i in range(1, self.depth)])
+			sql = "CREATE INDEX ngrams_index ON ngrams({})".format(index_cols)
+			cur.execute(sql)
 
 		# Delete the input file if it was a temp file created in __init__().
 		if temp_created:

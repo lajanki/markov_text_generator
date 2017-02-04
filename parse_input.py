@@ -39,7 +39,7 @@ OAUTH_TOKEN = keys["OAUTH_TOKEN"]
 OAUTH_SECRET = keys["OAUTH_SECRET"]
 
 # Check if non-empty keys were found.
-if API_KEY == API_SECRET == OAUTH_TOKEN == OAUTH_SECRET:
+if not all((API_KEY, API_SECRET, OAUTH_TOKEN, OAUTH_SECRET)):
 	print "WARNING: couldn't find proper Twitter access tokens in keys.json. Fetching timelines disabled."
 
 twitter = twython.Twython(API_KEY, API_SECRET, OAUTH_TOKEN, OAUTH_SECRET)
