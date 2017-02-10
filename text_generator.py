@@ -37,7 +37,6 @@ import sys
 import argparse
 import codecs
 import math
-import random
 import glob
 import os
 import sqlite3 as lite
