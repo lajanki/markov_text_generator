@@ -29,7 +29,7 @@ Then, run
 ```
 python text_generator.py data/training/fairytales --generate p n
 ```
-which generates text with ```p``` paragraphs of approximately ```n``` words each.
+which generates text with ```p``` paragraphs of approximately ```n``` words each. Actual length is taken from a Gaussian distribution with mean ```n``` and standard deviation ```n/4``` in order to introduce some variation.
 
 ### Additional Notes
  * The training target can be a folder of .txt files or a single .txt file. You can also pass an optional ```--depth``` argument with a value of 1,2 or 3 to determine how far back the script should look when looking for n-grams, ie. this is a value for n-1.
