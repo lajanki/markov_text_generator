@@ -30,7 +30,7 @@ class TextParser:
 	"""Parse folders containing .txt files."""
 
 	def __init__(self, path):
-		self.path = path
+		self.path = path.rstrip("/")  # strip any trailing slash so that os.path.basename reads the proper folder name
 
 	def parse_folder(self):
 		"""A wrapper to parse_files, reads text files within a folder as a list and passes it
@@ -46,6 +46,10 @@ class TextParser:
 				combined_words.extend(word_list)
 
 		text = " ".join(combined_words)
+		return text
+
+	def dump_text(self, text):
+		"""Store text to a file."""
 		output = "data/training/" + os.path.basename(self.path) + ".txt"
 		with codecs.open(output, mode="w", encoding="utf8") as f:
 			f.write(text)
@@ -345,6 +349,7 @@ if __name__ == "__main__":
 	parser.add_argument("--wp", help="Store latest Washington Post editorials to data/training/washington_post.", action="store_true")
 	parser.add_argument("--poem", help="Store famous poems to data/training/poems.", action="store_true")
 	parser.add_argument("--steam", help="Store n random Steam game descriptions to data/training/steam", metavar="n", type=int)
+	parser.add_argument("--folder", help="Merge the contents of a folder containing .txt files as one.")
 	args = parser.parse_args()
 
 
@@ -373,3 +378,8 @@ if __name__ == "__main__":
 		ids = steam_parser.get_app_ids()
 		sample = random.sample(ids, args.steam)
 		steam_parser.dump_descriptions(sample)
+
+	elif args.folder:
+		text_parser = TextParser(args.folder)
+		text = text_parser.parse_folder()
+		text_parser.dump_text(text)
