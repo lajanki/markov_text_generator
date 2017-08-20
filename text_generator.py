@@ -17,7 +17,6 @@ import argparse
 import codecs
 import glob
 import os
-import time
 import collections
 import simplejson as json  # faster decoding than the standard llibrary module
 
@@ -173,9 +172,9 @@ class Generator():
 		Return:
 			the normalized sentence as a string
 		"""
-		# Capitalize the first word (calling capitalize() on the whole string would
+		# Capitalize and strip the first word (calling capitalize() on the whole string would
 		# decapitalize everyting else).
-		tokens[0] = tokens[0].capitalize()
+		tokens[0] = tokens[0].capitalize().strip()
 		text = " ".join(tokens)
 		text = text.lstrip(" -*")
 
