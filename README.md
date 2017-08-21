@@ -3,7 +3,7 @@
 ## About
 There are a number of Markov chain based random text generators on GitHub. This one is mainly a personal project. I had already thought about ways to randomly generate text for one of my other projects and writing one seemed like a fun idea to work with a (semi?) supervised learning based algorithm so I decided to give it go. This is largely a fork of the code snippet at https://gist.github.com/agiliq/131679#file-gistfile1-py and also inspired by https://github.com/codebox/markov-text
 
-Markov chains, in the context of this program, are n-grams (ie. sets of n consecutive words) parsed from the text. For example, let's take n=2: given a sample text file as input, the generator first looks for all pairs of consecutive words from it and stores them as a training dataset. To create text, the generator first picks a random pair from the dataset as a seed and continues by choosing 2-grams whose first words matches the latest word added to the text. This way any 2 consecutive words from the generated text also appear together somewhere in the input file.
+Markov chains, in the context of this program, are n-grams (ie. sets of n consecutive words) parsed from the text. For example, let's take n=2: given a sample text file as input, the generator first looks for all pairs of consecutive words from it and stores them as a training dataset. To create text, the generator first picks a random pair from the dataset as the initial two words. It then continues by choosing 2-grams whose first word matches the latest word added to the text. This way any 2 consecutive words from the generated text also appear together somewhere in the original input file.
 
 In short, the generator attempts to mimic the source text. The result is usually somewhat syntactically correct (ie. it seems to consist of valid sentences), but is often without meaning. The following was generated from a set of popular poems:
 ```
@@ -21,20 +21,17 @@ The sample text needs to be varied enough in order to give the generator more th
 ## Usage
 First train the generator with a sample text. A set of popular fairytales is provided in the data/training/fairytales folder.
 ```
-python text_generator.py data/training/fairytales --train
+python text_generator.py --train data/training/fairytales 2
 ```
-This creates a fairytales.cache file in the data folder, which is an sqlite database of the n-grams parsed from the source texts.
+This creates a fairytales.cache file in the data/cache folder. The cache file constains the n-grams (in this case n=2) parsed from the input texts.
 
 Then, run
 ```
-python text_generator.py data/training/fairytales --generate p n
+python text_generator.py --generate data/cache/fairytales.cache p n
 ```
 which generates text with ```p``` paragraphs of approximately ```n``` words each. Actual length is taken from a Gaussian distribution with mean ```n``` and standard deviation ```n/4``` in order to introduce some variation.
 
-### Additional Notes
- * The training target can be a folder of .txt files or a single .txt file. You can also pass an optional ```--depth``` argument with a value of 1,2 or 3 to determine how far back the script should look when looking for n-grams, ie. this is a value for n-1.
- * The positional argument when generating can be either the input used to train the generator, as above, or the .cache built during training.
- * When run without a positional argument, ie. ```python text_generator.py``` the program provides a simple UI to run a previously trained generator.
+Additionally, when run without a positional argument, ie. ```python text_generator.py``` the program provides a simple UI to run a previously trained generator.
 
  
 ## Requirements
