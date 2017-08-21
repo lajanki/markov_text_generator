@@ -211,7 +211,7 @@ class Generator():
 
 
 	@staticmethod
-	def show_menu(files):
+	def show_menu():
 		"""Prints a list of existing .cache files and asks for user input on which
 		generator to use.
 		Args:
@@ -219,6 +219,7 @@ class Generator():
 		Return:
 			the path to the .cache the user selected
 		"""
+		files = glob.glob("data/cache/*.cache")
 		print "Select which existing generator to use:"
 		for i, file in enumerate(files):
 			print i+1, os.path.basename(file)
@@ -236,8 +237,10 @@ class Generator():
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description="Generates random text based on an input sample.")
-	parser.add_argument("--train", help="Train the generator. Creates a cache file needed to generate random text.", nargs = 2, metavar = ("path", "depth"))
-	parser.add_argument("--generate", help="Generate text with p paragraphs of about n words each.", nargs = 3, metavar = ("cache", "p", "n"))
+	parser.add_argument("--train", help="""Train the generator using an input training file or folder with a lookback depth. The depth is the
+		number of words considered to form a consecutive block. Creates a cache file needed to generate random text.""", nargs = 2, metavar = ("path", "depth"))
+	parser.add_argument("--generate", help="""Given a pre-trained cache file, generate text with p paragraphs of about n words each.""",
+		nargs = 3, metavar = ("cache", "p", "n"))
 	args = parser.parse_args()
 	#print args
 
@@ -260,7 +263,6 @@ if __name__ == "__main__":
 		print "Building a dataset with size {}...".format(trainer.n)
 		trainer.train()
 
-
 	elif args.generate:
 		cache = args.generate[0]
 		p = int(args.generate[1])
@@ -278,3 +280,13 @@ if __name__ == "__main__":
 
 		except IOError as err:
 			print "ERROR: Invalid cache file:", cache
+
+	else:
+		while True:
+			path = Generator.show_menu()
+			gen = Generator(path)
+			print gen.generate()
+
+			ans = raw_input("Press enter to return to menu or q to quit.")
+			if ans in ("e", "q"):
+				sys.exit()
