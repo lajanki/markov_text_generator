@@ -128,12 +128,19 @@ class Generator():
 		"""Given a key to the cache data, chooses a random word successor. Also generates the
 		next key.
 		"""
-		word = random.choice(self.cache_data[key])
+		try:
+			word = random.choice(self.cache_data[key])
 
-		# Compute new key by joining the last key_length - 1 words of the previous key and the previous word chosen
-		key = key.split(DELIMITER)[1:]
-		key.append(word)
-		key = DELIMITER.join(key)
+			# Compute new key by joining the last key_length - 1 words of the previous key and the previous word chosen
+			key = key.split(DELIMITER)[1:]
+			key.append(word)
+			key = DELIMITER.join(key)
+
+		# The random nature of the generation algorithm may attempt to use the last n-1 words of the last ngram as a key,
+		# this might not be a valid key. In such case, choose a random key and successor.
+		except KeyError as e:
+			key = random.choice(self.cache_data.keys())
+			word = random.choice(self.cache_data[key])
 
 		return word, key
 

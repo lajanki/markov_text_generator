@@ -67,6 +67,12 @@ class GeneratorTestCase(unittest.TestCase):
 		"""Does trying to create a generator with invalid path raise an Error?"""
 		self.assertRaises(IOError, text_generator.Generator, "data/cache/nosuchfile.cache")
 
+	def testExtraKeyCreatesNextWord(self):
+		"""Does an extra key outside of the cache file passed to next_word still return a (word, key) pair?"""
+		key = "Wow!MuchKey,VeryInValid,SuchExcitement!"
+		res = self.file_generator.next_word(key)
+		self.assertIsInstance(res, tuple)
+
 	def testSeedValidationOnInvalid(self):
 		"""Does an invalid seed return the empty string?"""
 		s = "ThisIsAlmostCertainlyAnInvalidSeed.ItSureWouldBeStrangeIfThereWereAllOneWordStringLikeThisInOneOfDonaldTrump'sTweets."
@@ -95,6 +101,7 @@ class GeneratorTestCase(unittest.TestCase):
 		self.assertTrue(text.lower().startswith(s.lower()))
 
 	def endsWithPunctuation(self):
+		"""Does the generated text end with punctuation?"""
 		text = self.file_generator.generate()
 		self.assertTrue(text.endswith((".", "!", "?", "...")))
 
