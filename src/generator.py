@@ -75,8 +75,12 @@ class Generator():
 
 	def get_cache_data(self):
 		"""Get the contents of the cache file as a dictionary."""
-		with codecs.open(self.path_to_cache_file, "r", "utf8") as f:
-			train_data = json.load(f)
-			return train_data
+		try:
+			with codecs.open(self.path_to_cache_file, "r", "utf8") as f:
+				train_data = json.load(f)
+				return train_data
+		except FileNotFoundError:
+			msg = "Invalid model: {}".format(self.path_to_cache_file)
+			raise FileNotFoundError(msg)
 
 

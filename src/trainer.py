@@ -13,7 +13,7 @@ Generating is done by choosing random n-1 rightmost words of the key + a random 
 import codecs
 import os
 import collections
-import simplejson as json  # faster decoding than the standard llibrary module
+import simplejson as json  # faster decoding than the standard library module
 
 from src import utils
 
@@ -32,6 +32,12 @@ class Trainer():
 
 		self.n = n # the size of the ngrams for training, the keys of the output json file will be the first n-1 words
 
+	def validate(self):
+		"""Check existance of the input training data file self.path_to_train_file."""
+		if not os.path.isfile(self.path_to_train_file):
+			msg = "Invalid training file: {}".format(self.path_to_train_file)
+			raise FileNotFoundError(msg)
+
 	def train(self):
 		"""Create a the training file by ngramming the original text into n-1 predecessor and 1 succor key value
 		dict and store to file.
@@ -45,7 +51,7 @@ class Trainer():
 
 		# Store the result to the cache file
 		with codecs.open(self.cache_file, "w", "utf8") as f:
-			json.dump(data, f)
+			json.dump(data, f, separators=(',', ':'))
 
 	def ngrams(self):
 		"""Generator for creating ngrams from the training data. For instance,
