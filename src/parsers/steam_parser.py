@@ -2,7 +2,8 @@
 
 # Parses Steam game descriptions to a plain text file. Uses both the official Steam API
 # http://api.steampowered.com and the undocumented http://store.steampowered.com/api for
-# fetching actual descriptions.
+# fetching actual descriptions. See https://wiki.teamfortress.com/wiki/User:RJackson/StorefrontAPI
+# for community wiki on store.steampowered.com usage.
 # 
 # The database contains > 73 000 titles. In order to limit the output filesize, only a sample
 # of all titles is used to generate the output. Sample size is passed to the initializer.
@@ -49,8 +50,9 @@ class SteamParser(base_parser.BaseParser):
 		"""Fetch a single game description matching an API appid.
 		Note: unlike api.steampowered.com this is an undocumented API and may change any time.
 		"""
-		url = "http://store.steampowered.com/api/appdetails?appids={}&cc=us&l=english".format(appid)
-		r = requests.get(url)
+		url = "http://store.steampowered.com/api/appdetails"
+		params = {"appids": appid, "cc": "us", "l": "english"}
+		r = requests.get(url, params=params)
 		response = r.json()[str(appid)]
 
 		if response["success"] and response["data"]["type"] == "game":

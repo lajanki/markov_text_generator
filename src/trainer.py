@@ -53,6 +53,9 @@ class Trainer():
 		with codecs.open(self.cache_file, "w", "utf8") as f:
 			json.dump(data, f, separators=(',', ':'))
 
+		msg = "Model created at {}".format(self.cache_file)
+		print(msg)
+
 	def ngrams(self):
 		"""Generator for creating ngrams from the training data. For instance,
 		"What a lovely day" would create the following two 3-grams:

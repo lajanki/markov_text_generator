@@ -16,6 +16,11 @@ class BaseParser(abc.ABC):
 		self.path_to_ofile = os.path.join(utils.BASE, "data", "training", ofile)
 		self.content = None
 
+	def run(self):
+		"""Wrapper for running the parser and saving the results."""
+		self.parse()
+		self.save()
+
 	@abc.abstractmethod
 	def parse(self):
 		"""This method should be implemented in subclass and set the self.content attribute
