@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 
-import codecs
+# Parses tweets from a single Twitter handle.
+
 import os
 import json
 
 import twython
+from src.parsers import base_parser
 from src import utils
 
 
 
-class TweetParser:
+class TweetParser(base_parser.BaseParser):
 	"""Parse Twitter timelines to a single .txt file. Twitter API supports fetching upto 3 200 tweets,
 	in pages of 200 tweets.
 	Timeline can either be specified as the last 3 200 tweets or starting from a specified tweet id.
@@ -19,7 +21,7 @@ class TweetParser:
 		"""Creates a parser for a specific Twitter screen_name (ie. @handle)"""
 		self.twitter = self.build()
 		self.screen_name = screen_name
-		self.tweets = []
+		super().__init__(screen_name + ".txt")
 
 	def build(self):
 		"""Build a Twitter object."""
@@ -67,26 +69,23 @@ class TweetParser:
 			)
 			# Return early if there are no more pages.
 			if not page:
-				self.tweets = tweets # set the tweets attribute before returning
-				return
+				return tweets
 
 			id_ = page[-1]["id"]
 			tweets.extend(page)
 
-		self.tweets = tweets
+		return tweets
 
-	def dump_tweets(self):
-		"""Join a list of tweets to a single text file as input for the text generator.
-		Arg:
-			tweets (list): a list of tweet objects as returned by the API
-		"""
+	def parse(self):
+		"""Join a list of tweets to a single text file as input for the text generator."""
+		tweets = self.get_timeline_history()
 		 # drop urls and mentions
-		texts = [self.filter_tweet(t) for t in self.tweets]
+		texts = [self.filter_tweet(t) for t in tweets]
 		texts = " ".join(texts)
 
 		# Determine the date range of the tweets
-		start = self.tweets[-1]["created_at"]  # eg. Tue Mar 01 19:34:01 +0000 2016
-		end = self.tweets[0]["created_at"]
+		start = tweets[-1]["created_at"]  # eg. Tue Mar 01 19:34:01 +0000 2016
+		end = tweets[0]["created_at"]
 
 		# Parse as month day year
 		start = [ start.split()[i] for i in (1, 2, 5) ]
@@ -94,14 +93,8 @@ class TweetParser:
 		end = [ end.split()[i] for i in (1, 2, 5) ]
 		end = " ".join(end)
 
-		# Store the tweets in /training directory under the screen_name.
-		filename = self.screen_name + ".txt"
-		output = os.path.join(utils.BASE, "data", "training", filename)  
-		with codecs.open(output, mode="w", encoding="utf8") as f:
-			f.write(texts)
-
-		# Print an info message based on wheter tweets were added to an existing file or a new one was created.
-		msg = "Wrote {} tweets between {} and {} to {}".format(len(texts), start, end, filename)
+		self.content = texts
+		msg = "Parsed {} tweets between {} and {}".format(len(texts), start, end)
 		print(msg)
 
 	def filter_tweet(self, tweet):

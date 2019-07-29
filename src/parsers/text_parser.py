@@ -2,45 +2,32 @@
 
 import codecs
 import glob
-import os
+import os.path
 
+from src.parsers import base_parser
 from src import utils
 
 
-class TextParser:
+class TextParser(base_parser.BaseParser):
 	"""Joins folder containing .txt files to a single file."""
 
 	def __init__(self, folder):
-		"""Set absolute path to the data folder."""
-		self.folder = folder
-		self.path = os.path.join(utils.BASE, "data", "training", folder)
-		self.text = ""
+		"""Setup path to folder containing text fiels to parse."""
+		self.path_to_input = os.path.join(utils.BASE, "data", "training", folder)
+		ofilename = folder + ".txt"
+		super().__init__(ofilename)
 
 	def parse(self):
-		"""Reads the contents of files in the input folder into a single string.
-		Result is stored as the self.text attribute.
-		"""
-		if not os.path.isdir(self.path):
-			raise ValueError("ERROR: no such folder: " + self.folder)
+		"""Reads the contents of files in the input folder into the self.content attribute."""
+		if not os.path.isdir(self.path_to_input):
+			raise FileNotFoundError("ERROR: no such folder: " + self.path_to_input)
 
-		files = glob.glob(self.path + "/*.txt")
+		files = glob.glob(self.path_to_input + "/*.txt")
 		combined_words = []
 		for file_ in files:
 			with codecs.open(file_, encoding="utf8") as f:
 				word_list = f.read().split()
 				combined_words.extend(word_list)
 
-		self.text = " ".join(combined_words)
+		self.content = " ".join(combined_words)
 
-	def save(self):
-		"""Store text to a file."""
-		if not self.text:
-			raise ValueError("ERROR: nothing to save, run parse first")
-
-		# store output in the training folder with the same name as the input folder
-		filename = self.folder + ".txt"
-		output = os.path.join(utils.BASE, "data", "training", filename)  
-		with codecs.open(output, mode="w", encoding="utf8") as f:
-			f.write(self.text)
-
-		print("Created a dump at", output)

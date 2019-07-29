@@ -1,14 +1,5 @@
 #!/usr/bin/env python3
 
-import random
-import os
-import codecs
-
-import requests
-from bs4 import BeautifulSoup
-from src import utils
-
-
 # Parses Steam game descriptions to a plain text file. Uses both the official Steam API
 # http://api.steampowered.com and the undocumented http://store.steampowered.com/api for
 # fetching actual descriptions.
@@ -16,17 +7,24 @@ from src import utils
 # The database contains > 73 000 titles. In order to limit the output filesize, only a sample
 # of all titles is used to generate the output. Sample size is passed to the initializer.
 
+import random
+import os
+import requests
+
+from bs4 import BeautifulSoup
+from src.parsers import base_parser
+from src import utils
 
 
-class SteamParser:
+class SteamParser(base_parser.BaseParser):
 	"""Parse game descriptions from the Steam storefront."""
 
 	def __init__(self, size=200):
 		"""Initialize parser with number of games whose description to read."""
 		self.sample = random.sample(self.get_app_id_list(), size)
-		self.descriptions = []
+		super().__init__("steam.txt")
 
-	def parse_sample_descriptions(self):
+	def parse(self):
 		"""Given a list of appids store their decriptions as the self.descriptions attribute."""
 		descriptions = []
 		for appid in self.sample:
@@ -35,7 +33,8 @@ class SteamParser:
 			if description:
 				descriptions.append(description)
 
-		self.descriptions = descriptions
+		print("Parsed {} descriptions".format(len(descriptions)))
+		self.content = " ".join(descriptions)
 
 	def get_app_id_list(self):
 		"""Fetch a list of games on the Steam store and their descriptions."""
@@ -47,7 +46,7 @@ class SteamParser:
 		return app_ids
 
 	def get_app_description(self, appid):
-		"""Fetch a game description matching an API appid.
+		"""Fetch a single game description matching an API appid.
 		Note: unlike api.steampowered.com this is an undocumented API and may change any time.
 		"""
 		url = "http://store.steampowered.com/api/appdetails?appids={}&cc=us&l=english".format(appid)
@@ -60,21 +59,6 @@ class SteamParser:
 			soup = BeautifulSoup(description, "html.parser")
 
 			return soup.text
-
-	def dump_descriptions(self):
-		"""Store the list of game descriptions to a file."""
-		if not self.descriptions:
-			raise ValueError("ERROR: nothing to save, run parse_sample_descriptions first")
-
-		text = " ".join(self.descriptions)
-
-		path = os.path.join(utils.BASE, "data", "training", "steam.txt")
-		with codecs.open(path, "w", "utf8") as f:
-			f.write(text)
-
-		print("Wrote {} descriptions to {}".format(len(self.descriptions), path))
-
-
 
 	def store_app_names(self):
 		"""Write app names to a file."""
