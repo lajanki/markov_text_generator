@@ -1,38 +1,58 @@
 # markov_text_generator
 
-## About
-There are a number of Markov chain based random text generators on GitHub. This one is mainly a personal project. I had already thought about ways to randomly generate text for one of my other projects and writing one seemed like a fun idea to work with a (semi?) supervised learning based algorithm so I decided to give it go. This is largely a fork of the code snippet at https://gist.github.com/agiliq/131679#file-gistfile1-py and also inspired by https://github.com/codebox/markov-text
-
-Markov chains, in the context of this program, are n-grams (ie. sets of n consecutive words) parsed from the text. For example, let's take n=2: given a sample text file as input, the generator first looks for all pairs of consecutive words from it and stores them as a training dataset. To create text, the generator first picks a random pair from the dataset as the initial two words. It then continues by choosing 2-grams whose first word matches the latest word added to the text. This way any 2 consecutive words from the generated text also appear together somewhere in the original input file.
-
-In short, the generator attempts to mimic the source text. The result is usually somewhat syntactically correct (ie. it seems to consist of valid sentences), but is often without meaning. The following was generated from a set of popular poems:
-```
-Scooped homeless snows ag'in! — 'n rain she peers,
-Far from — Curb it meets the sawn-off lock,
-that endless space it is taken soon.
-```
-Generally, the longer the generated text is, the less sense it makes. For Donald Trump's tweets this seems to work well enough:
+A random text generator based on Markov Chains. Given a sample text as input this script will generate similar text. For instance, the following text was generated from a set of Donald Trump's tweets
 ```
 Clinton failed over T.V., much like failed 47% candidate Mitt Romney.
 These nasty, angry, jealous failures have ZERO investments in Russia.
 ```
-The sample text needs to be varied enough in order to give the generator more than one option when choosing the next word or the result will be very similar to the source.
+
+Markov chains, in the context of this program, are ngrams parsed from input text. The program looks for sets of n consecutive words (the ngrams) in the input training data and keeps track of their successors. In order to generate text, the script can then lookup an ngram and a random successor and keep looping the process for every n words generated. This leads to output where every n-1 consecutive words appeared somewhere in the input training data. The result is usually somewhat syntactically correct (in that it seems to consist of valid sentences), but is often without meaning. For Donald Trump's tweets this seems to work well enough.
+
 
 ## Usage
-First train the generator with a sample text. A set of popular fairytales is provided in the data/training/fairytales folder.
+First, install dependencies in a virtualenv and activate the new environment
 ```
-python text_generator.py --train data/training/fairytales 2
+python3 -m virtualenv venv
+source venv/bin/activate
+pip install -r requirements.txt
 ```
-This creates a fairytales.cache file in the data/cache folder. The cache file constains the n-grams (in this case n=2) parsed from the input texts.
 
-Then, run
-```
-python text_generator.py --generate data/cache/fairytales.cache p n
-```
-which generates text with ```p``` paragraphs of approximately ```n``` words each. Actual length is taken from a Gaussian distribution with mean ```n``` and standard deviation ```n/4``` in order to introduce some variation.
+Using the program consists of two phases: training and generating.
 
-Additionally, when run without a positional argument, ie. ```python text_generator.py``` the program provides a simple UI to run a previously trained generator.
+1. Training requires training data: a plain text file containing the text to mimic. Two sample files, a selection of fairytales and a set of Donald Trump's tweets are provided in `data/training` directory.
 
- 
-## Requirements
-The parse_input.py module contains some ad-hoc functions for parsing input files inside a folder as well as from various websites to format suitable for training. It requires [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/bs4/doc/) and [Twython](https://twython.readthedocs.io/en/latest/usage/install.html) to work.
+To train a genrator run
+```
+python main.py --train <train-data> <n>
+```
+where `<train-data>` is a training file in the training directory and `<n>` is the size of the ngram to split the text into. For instance,
+```
+python main.py --train realDonaldTrump.txt
+```
+In this case `n` will default to `3`.
+This outputs a model `realDonaldTrump.dat` in `data/cache`. The model contains information about the ngrams and their successor (it's really just a json file of all n-1 successive words as keys and a list of successors as values)
+
+2. To generate text using the above model, run
+```
+python main.py --generate realDonaldTrump.dat 30 3
+```
+This generates 3 paragraphs of about 30 words each (actual number of words is pulled from a normal distribution).
+
+
+### Training data parsers
+Included are also a set of parsers to fetch input training data from various sources:
+ 1. folders of plain text files in `data/training`
+ 2. famous poems from https://allpoetry.com/classics/famous_poems
+ 3. Steam store game descriptions
+ 4. Tweets from a user's timeline
+
+To use one of the parsers, run `parse_input.py`. See
+```
+python parse_input.py -h
+```
+for help.
+
+Running any of the above parsers will generate an output plain text file in `data/training` which can be used as an input to the trainer. Note that parsing tweets requires valid Twitter API keys and access tokens in `twitter_keys.json`, see https://developer.twitter.com/en/docs/basics/authentication/guides/access-tokens.html.
+
+
+
