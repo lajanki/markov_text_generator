@@ -49,10 +49,11 @@ class TweetParser(base_parser.BaseParser):
 		tweets = []
 		# fetch the first page with maximum number of tweets
 		page = self.twitter.get_user_timeline(
-			screen_name = self.screen_name,
-			exclude_replies = True,
-			include_rts = False,
-			count = 200,
+			screen_name=self.screen_name,
+			exclude_replies=True,
+			include_rts=False,
+			count=200,
+			tweet_mode="extended",
 			since_id=1
 		)
 		id_ = page[-1]["id"] # id of the earliest tweet
@@ -61,11 +62,12 @@ class TweetParser(base_parser.BaseParser):
 		# Read the next n-1 pages by setting the max_id parameter to the earliest id of the previous page
 		for _ in range(pages-1):
 			page = self.twitter.get_user_timeline(
-				screen_name = self.screen_name,
-				exclude_replies = True,
-				include_rts = False,
-				count = 200,
-				max_id = id_
+				screen_name=self.screen_name,
+				exclude_replies=True,
+				include_rts=False,
+				count=200,
+				tweet_mode="extended",
+				max_id=id_
 			)
 			# Return early if there are no more pages.
 			if not page:
@@ -101,7 +103,7 @@ class TweetParser(base_parser.BaseParser):
 		"""Filter a single tweet to better suit training data:
 		Remove urls, user mentions and hashtags.
 	 	"""
-		split = tweet["text"].split()
+		split = tweet["full_text"].split()
 		text = " ".join( [word for word in split if not any(item in word for item in ("http://", "https://", "@", "#"))] )
 		text = text.replace("&amp;", "&")
 		return text
