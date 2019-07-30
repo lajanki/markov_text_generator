@@ -53,6 +53,23 @@ class Generator():
 		# Return a properly capitalized and punctuated string.
 		return utils.cleanup(words)
 
+	def generate_paragraphs(self, size, paragraphs):
+		"""Generate text of number of paragraphs of given length.
+		Args:
+			size (int): word length of each paragraph
+			paragraphs (int) number of paragraphs
+		"""
+		text = []
+		# generate paragraph size from a normal distribution using size as the mean
+		# and a fraction of size as the standard deviation
+		for _ in range(paragraphs):
+			p_sigma = max([int(size/3), 5])
+			p_size = int(random.gauss(size, p_sigma))
+			p = self.generate(p_size, True)
+			text.append(p)
+
+		return "\n\n".join(text)
+
 	def next_word(self, key):
 		"""Given a key to the cache data, chooses a random word successor. Also generates the
 		next key.

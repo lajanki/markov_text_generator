@@ -26,16 +26,16 @@ training_files = list(map(os.path.basename, training_files))
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description="Generates random text from sample input")
 	parser.add_argument("--generate", help="Generate text using a model in data/cache", metavar="model", choices=models)
-	parser.add_argument("size", help="Generated text size", nargs="?", default=25, type=int, metavar="size")
-	parser.add_argument("--complete-sentence", help="Continue geenrating past size until next punctuation ", action="store_true")	
+	parser.add_argument("size", help="Number of words to generate for each paragraph", nargs="?", default=25, type=int, metavar="size")
+	parser.add_argument("paragraphs", help="Number of paragraphs to generate", nargs="?", default=1, type=int, metavar="paragraphs")	
 
 	parser.add_argument("--train", help="Train a model usinginput plain text file from data/training", metavar="train-data", choices=training_files)
-	parser.add_argument("ngram", help="ngram size for training", metavar="n", type=int, default=3) 
+	parser.add_argument("ngram", help="ngram size for training", nargs="?", metavar="n", type=int, default=3) 
 	args = parser.parse_args()
 
 	if args.generate is not None:
 		gen = generator.Generator(args.generate)
-		text = gen.generate(args.size, args.complete_sentence)
+		text = gen.generate_paragraphs(args.size, args.paragraphs)
 		print(text)
 
 	elif args.train is not None:
