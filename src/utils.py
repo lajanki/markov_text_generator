@@ -9,8 +9,8 @@ DELIMITER = "_"
 
 
 def cleanup(tokens):
-    """cleanup a sentence by capitalizing the first letter, remove conjuctions like "and" and "to"
-    from the end and add a punctuation mark.
+    """cleanup a sentence by capitalizing the first letter, remove certain characters such as
+    parenthesis which are difficult to properly handle on random text generation.
     Arg:
         tokens (list): the sentence to normalize as a list of words
     Return:
@@ -22,7 +22,7 @@ def cleanup(tokens):
     text = " ".join(tokens)
     text = text.lstrip(" -*")
 
-    # Replace opening parathesis with a comma and remove closing paranthesesis and
+    # Replace opening parathesis with a comma and remove closing paranthesesis.
     # replace other inconvenient characters.
     replacements = [
         (" (", ","),
@@ -42,13 +42,4 @@ def cleanup(tokens):
 
 
     text = text.rstrip(",;:- ")
-    if not text.endswith((".", "!", "?", "...")):
-        rand = random.random()
-        if rand < 0.81:
-            end = "."  # "." should have the greatest change of getting selected
-        else:
-            end = random.choice(("!", "?", "..."))  # choose evenly between the rest
-
-        text += end
-
     return text

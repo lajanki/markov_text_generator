@@ -46,7 +46,7 @@ class Generator():
 
 		# To complete a sentence, continue adding words until one that ends with a punctuation mark
 		if complete_sentence:
-			while not word.endswith((".", "!", "?", "...", ":", ";", ",", "-", u"…")):
+			while not word.endswith((".", "!", "?", "...", u"…")):
 				word, key = self.next_word(key)
 				words.append(word)
 

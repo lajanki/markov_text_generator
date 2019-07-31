@@ -39,6 +39,12 @@ python main.py --generate realDonaldTrump.dat 30 3
 This generates 3 paragraphs of about 30 words each (actual number of words is pulled from a normal distribution).
 
 
+### Running unit tests
+Unit tests can be run with
+```
+python -m unittest tests/test*.py
+```
+
 ### Training data parsers
 Included are also a set of parsers to fetch input training data from various sources:
  1. folders of plain text files in `data/training`

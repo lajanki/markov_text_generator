@@ -10,8 +10,7 @@ A trainer outputs the resulting json file to data/cache which is given as an inp
 Generating is done by choosing random n-1 rightmost words of the key + a random followup word.
 """
 
-import codecs
-import os
+import os.path
 import collections
 import simplejson as json  # faster decoding than the standard library module
 
@@ -50,7 +49,7 @@ class Trainer():
 				data[key].append(ngram[-1])
 
 		# Store the result to the cache file
-		with codecs.open(self.cache_file, "w", "utf8") as f:
+		with open(self.cache_file, "w") as f:
 			json.dump(data, f, separators=(',', ':'))
 
 		msg = "Model created at {}".format(self.cache_file)
@@ -65,7 +64,7 @@ class Trainer():
 			the next ngram
 		"""
 		# Read the training data from file and split by words.
-		with codecs.open(self.path_to_train_file, "r", "utf8") as f:
+		with open(self.path_to_train_file) as f:
 			train_data = f.read()
 			train_data = train_data.split()
 
