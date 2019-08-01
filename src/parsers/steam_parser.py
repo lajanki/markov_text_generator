@@ -48,8 +48,11 @@ class SteamParser(base_parser.BaseParser):
 		"""Fetch a list of games on the Steam store and their descriptions."""
 		r = requests.get("http://api.steampowered.com/ISteamApps/GetAppList/v2")
 		app_list = r.json()["applist"]["apps"]
-		# excude trailers, soundtracks and demos
-		app_ids = [ app["appid"] for app in app_list if (not any( [token in app["name"] for token in ("Trailer", "Soundtrack", "OST", "Demo")] ) and app["appid"] >= 10) ]
+		# excude trailers, soundtracks and demos as well titles not in english
+		app_ids = [ app["appid"] for app in app_list if
+			(not any( [token in app["name"] for token in ("Trailer", "Soundtrack", "OST", "Demo")] )
+			and app["appid"] >= 10) 
+			]
 
 		return app_ids
 
@@ -62,11 +65,17 @@ class SteamParser(base_parser.BaseParser):
 		r = self.s.get(url, params=params)
 		if r.status_code == 200:
 			try:
-				json = r.json()
+				data = r.json()
 				id_ = str(appid)
+				# Exclude titles where English is not a supported languge.
+				# This attempts to drop non-English descriptions, probably not perfect
+				# but much faster than running a language detection API query.
+				if "English" not in data[id_]["data"]["supported_languages"]:
+					return
+
 				valid_types = ("game", "dlc", "demo", "advertising", "mod")
-				if json[id_]["data"]["type"] in valid_types:
-					description = json[id_]["data"]["detailed_description"]
+				if data[id_]["data"]["type"] in valid_types:
+					description = data[id_]["data"]["detailed_description"]
 					# description is in html, use beautifulsoup to parse it as plain text
 					soup = BeautifulSoup(description, "html.parser")
 
