@@ -7,6 +7,9 @@
 # 
 # The database contains > 73 000 titles. In order to limit the output filesize, only a sample
 # of all titles is used to generate the output. Sample size is passed to the initializer.
+# Note that fetching app descriptions is done one at a time, ie. the default sample size of
+# 200 results in 200 API calls.
+
 
 import random
 import os
@@ -23,10 +26,14 @@ class SteamParser(base_parser.BaseParser):
 	def __init__(self, size=200):
 		"""Initialize parser with number of games whose description to read."""
 		self.sample = random.sample(self.get_app_id_list(), size)
+		self.s = requests.Session()
 		super().__init__("steam.txt")
 
 	def parse(self):
-		"""Given a list of appids store their decriptions as the self.descriptions attribute."""
+		"""Parses the sample of appids for game descriptions and store as self.content attribute.
+		Note that not all apps in self.sample are games, usually running this will result is much
+		smaller parsed appids than self.sample.
+		"""
 		descriptions = []
 		for appid in self.sample:
 			description = self.get_app_description(appid)
@@ -40,8 +47,8 @@ class SteamParser(base_parser.BaseParser):
 	def get_app_id_list(self):
 		"""Fetch a list of games on the Steam store and their descriptions."""
 		r = requests.get("http://api.steampowered.com/ISteamApps/GetAppList/v2")
-		app_list = r.json()
-		app_list = app_list["applist"]["apps"]
+		app_list = r.json()["applist"]["apps"]
+		# excude trailers, soundtracks and demos
 		app_ids = [ app["appid"] for app in app_list if (not any( [token in app["name"] for token in ("Trailer", "Soundtrack", "OST", "Demo")] ) and app["appid"] >= 10) ]
 
 		return app_ids
@@ -52,15 +59,20 @@ class SteamParser(base_parser.BaseParser):
 		"""
 		url = "http://store.steampowered.com/api/appdetails"
 		params = {"appids": appid, "cc": "us", "l": "english"}
-		r = requests.get(url, params=params)
-		response = r.json()[str(appid)]
+		r = self.s.get(url, params=params)
+		if r.status_code == 200:
+			try:
+				json = r.json()
+				id_ = str(appid)
+				valid_types = ("game", "dlc", "demo", "advertising", "mod")
+				if json[id_]["data"]["type"] in valid_types:
+					description = json[id_]["data"]["detailed_description"]
+					# description is in html, use beautifulsoup to parse it as plain text
+					soup = BeautifulSoup(description, "html.parser")
 
-		if response["success"] and response["data"]["type"] == "game":
-			description = response["data"]["detailed_description"]
-			# description is in html, use beautifulsoup to parse it as plain text
-			soup = BeautifulSoup(description, "html.parser")
-
-			return soup.text
+					return soup.text
+			except (TypeError, KeyError):
+				return
 
 	def store_app_names(self):
 		"""Write app names to a file."""
@@ -70,8 +82,7 @@ class SteamParser(base_parser.BaseParser):
 		keywords = ("Trailer", "Soundtrack", "OST", "Demo", "DLC", "SDK", "Beta", "Map Pack")
 
 		app_ids = [ app["name"] for app in app_list if (not any( [token in app["name"] for token in keywords] ) and app["appid"] >= 10) ]
-		with open("data/training/steam/app_names.dat", "w") as f:
+		with open("steam_app_names.txt", "w") as f:
 			for app in app_ids:
-				name = app.encode("utf8")
-				f.write(name + "\n")
+				f.write(app + "\n")
 
