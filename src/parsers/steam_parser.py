@@ -39,6 +39,7 @@ class SteamParser(base_parser.BaseParser):
 			description = self.get_app_description(appid)
 			# description is None if appid didn't match a valid game filter
 			if description:
+				description = self.filter_description(description)
 				descriptions.append(description)
 
 		print("Parsed {} descriptions".format(len(descriptions)))
@@ -95,3 +96,8 @@ class SteamParser(base_parser.BaseParser):
 			for app in app_ids:
 				f.write(app + "\n")
 
+	def filter_description(self, description):
+		"""Remove urls from description."""
+		split = description.split()
+		text = " ".join( [word for word in split if not any(item in word for item in ("http://", "https://"))] )
+		return text
