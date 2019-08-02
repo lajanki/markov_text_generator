@@ -52,7 +52,8 @@ class Trainer():
 		with open(self.cache_file, "w") as f:
 			json.dump(data, f, separators=(',', ':'))
 
-		msg = "Model created at {}".format(self.cache_file)
+		avg_key_length = self.compute_variation(data)
+		msg = "Model created at {}. Average key length: {:03.2f}".format(self.cache_file, avg_key_length)
 		print(msg)
 
 	def ngrams(self):
@@ -75,3 +76,12 @@ class Trainer():
 		for i in range(len(train_data) - (self.n - 1)):
 			yield train_data[i: i + self.n]
 
+	def compute_variation(self, cache_data):
+		"""Compute average number of successors per key in the cache data."""
+		key_lens = []
+		for key in cache_data:
+			size = len(cache_data[key])
+			key_lens.append(size)
+
+		avg = sum(key_lens)/len(key_lens)
+		return avg
