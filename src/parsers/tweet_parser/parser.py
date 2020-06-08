@@ -63,10 +63,11 @@ class TwitterParser():
 		to as a date stamped file in the Twitter handle directory.
 		""" 
 		tweet_metadata = _get_tweet_metadata()
-		latest_tweet_id = tweet_metadata[self.handle]
+		latest_tweet = tweet_metadata[self.handle]
 
-		response = self.read_timeline_since(latest_tweet_id)
-		tweet_metadata[self.handle] = response[0]["id"]  # update latest tweet id
+		logging.info("Fetching tweets since %s", latest_tweet["created_at"])
+		response = self.read_timeline_since(latest_tweet["id"])
+		tweet_metadata[self.handle] = response[0]  # update tweet metadata with latest tweet received
 
 		self.write_tweets(response)
 		_write_tweet_metadata(tweet_metadata)
@@ -106,15 +107,18 @@ class TwitterParser():
 			count=50,
 			trim_user=True,
 			tweet_mode="extended", # undocumented parameter to fetch full tweet text,
-			#max_id=max_tweet_id,
+			#max_id=1,
 			since_id=since_id
 		)
 		if not response:
 			logging.warn("Empty response received, exiting")
-			sys.exit()
+			raise RuntimeError("Empty response received, aborting")
+
 		elif len(response) == 1:
-			logging.warn("Only 1 item in the response, existing")
-			sys.exit()
+			logging.warn("Only 1 item in the response:")
+			logging.warn(response[0])
+			raise RuntimeError("Limited response, aborting")
+
 		else:
 			last = response[0]["created_at"]
 			first = response[-1]["created_at"]
@@ -128,8 +132,11 @@ class TwitterParser():
 		storage_base = os.path.join(RELATIVE_BASE, self.handle, today.strftime("%Y-%m"))
 		path = os.path.join(storage_base, today.strftime("%Y-%m-%d") + ".json")
 
+		# Extend with existing file (if exists)
 		if os.path.isfile(path):
-			raise RuntimeError("File %s already exists", path)
+			logging.info("Appending to existing file %s", path)
+			with open(path) as f:
+				tweets.extend(json.load(f))
 
 		if not os.path.isdir(storage_base):
 			os.makedirs(storage_base)
