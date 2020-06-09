@@ -1,18 +1,29 @@
 {
   "@realDonaldTrump": {
-    "created_at": "Mon Jun 08 15:44:09 +0000 2020",
-    "id": 1270018789250400257,
-    "id_str": "1270018789250400257",
-    "full_text": "This year has seen the lowest crime numbers in our Country\u2019s recorded history, and now the Radical Left Democrats want to Defund and Abandon our Police. Sorry, I want LAW &amp; ORDER!",
+    "created_at": "Tue Jun 09 14:23:32 +0000 2020",
+    "id": 1270360886297989120,
+    "id_str": "1270360886297989120",
+    "full_text": "\u201cDefunding Police would be good for Robbers &amp; Rapists.\u201d @SenBillCassidy",
     "truncated": false,
     "display_text_range": [
       0,
-      183
+      75
     ],
     "entities": {
       "hashtags": [],
       "symbols": [],
-      "user_mentions": [],
+      "user_mentions": [
+        {
+          "screen_name": "SenBillCassidy",
+          "name": "U.S. Senator Bill Cassidy, M.D.",
+          "id": 1017500185356853248,
+          "id_str": "1017500185356853248",
+          "indices": [
+            60,
+            75
+          ]
+        }
+      ],
       "urls": []
     },
     "source": "<a href=\"http://twitter.com/download/iphone\" rel=\"nofollow\">Twitter for iPhone</a>",
@@ -30,8 +41,8 @@
     "place": null,
     "contributors": null,
     "is_quote_status": false,
-    "retweet_count": 25714,
-    "favorite_count": 111338,
+    "retweet_count": 19810,
+    "favorite_count": 84335,
     "favorited": false,
     "retweeted": false,
     "lang": "en"
