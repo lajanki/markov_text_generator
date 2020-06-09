@@ -28,12 +28,12 @@ logging.basicConfig(
 )
 
 
-APP_KEY = os.getenv("API_KEY")
-APP_SECRET = os.getenv("API_SECRET")
-OAUTH_TOKEN = os.getenv("OAUTH_TOKEN")
-OAUTH_TOKEN_SECRET = os.getenv("OAUTH_SECRET")
+APP_KEY = os.environ["API_KEY"]
+APP_SECRET = os.environ["API_SECRET"]
+OAUTH_TOKEN = os.environ["OAUTH_TOKEN"]
+OAUTH_TOKEN_SECRET = os.environ["OAUTH_SECRET"]
 
-twitter = twython.Twython(APP_KEY, APP_SECRET,
+client = twython.Twython(APP_KEY, APP_SECRET,
 	OAUTH_TOKEN, OAUTH_TOKEN_SECRET)
 
 
@@ -58,7 +58,7 @@ class TwitterParser():
 	def __init__(self, handle):
 		self.handle = handle
 
-	def fetch_tweets(self):
+	def fetch_new_tweets(self):
 		"""Look for new tweets since previous run and save the raw json responses
 		to as a date stamped file in the Twitter handle directory.
 		""" 
@@ -73,7 +73,13 @@ class TwitterParser():
 		_write_tweet_metadata(tweet_metadata)
 
 	def save_training_data(self, start_date, months):
-		"""Parse save tweets responses into a .txt file to be used for training."""
+		"""Parse selected saved tweets responses into a single string to be used for training.
+		Args:
+			start_date (str): name of the monthly folder for which to start parsing backwards
+			month (int): number of months (ie. folders) to parse
+		Return:
+			Contents of the parsed tweets as a string.
+		"""
 		parsed_texts = []
 		for i in range(months):
 			d = datetime.datetime.strptime(start_date, "%Y-%m") - relativedelta(months=i)
@@ -85,10 +91,9 @@ class TwitterParser():
 					tweet_data = json.load(f)
 				
 				tweet_texts = [filter_tweet(t["full_text"]) for t in tweet_data]
-
 				parsed_texts.extend(tweet_texts)
 		
-		return parsed_texts
+		return "\n".join(parsed_texts)
 
 	def read_timeline_since(self, since_id):
 		"""Fetch (most recent) tweets from user. 
@@ -100,7 +105,7 @@ class TwitterParser():
 		"""
 
 		# fetch the first page with maximum number of tweets
-		response = twitter.get_user_timeline(
+		response = client.get_user_timeline(
 			screen_name=self.handle,
 			exclude_replies=True,
 			include_rts=False,
@@ -149,15 +154,15 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description="Fetches users latest tweets from Twitter")
 	parser.add_argument("handle", help="Twitter handle")
 	parser.add_argument("--fetch", action="store_true", help="Fetch new tweets since previous run")
-	parser.add_argument("--parse", action="store_true", help="Parse stored tweets as training data")
+	parser.add_argument("--parse", nargs=2, metavar=("date", "number of months"), help="Parse stored tweets as training data")
 	args = parser.parse_args()
-
 	twitter_parser = TwitterParser(args.handle)
+
 	if args.fetch:
-		twitter_parser.fetch_tweets()
+		twitter_parser.fetch_new_tweets()
 
 	elif args.parse:
-		twitter_parser.save_training_data("2020-06", 1)
-
-
-
+		start_month = args.parse[0]
+		number_of_months = int(args.parse[1])
+		res = twitter_parser.save_training_data(start_month, number_of_months)
+		print(res)
