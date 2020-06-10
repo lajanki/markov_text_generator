@@ -17,9 +17,11 @@ from dotenv import load_dotenv
 
 
 
+
 RELATIVE_BASE = os.path.dirname(os.path.abspath(__file__))
 METADATA_FILE = os.path.join(RELATIVE_BASE, "tweet_metadata.json")
 LOG_FILE = os.path.join(RELATIVE_BASE, "parser.log")
+TWITTER_KEY_FILE = os.path.join(RELATIVE_BASE, "twitter_keys.env")
 
 logging.basicConfig(
 	handlers=[logging.FileHandler(LOG_FILE), logging.StreamHandler()],
@@ -27,6 +29,8 @@ logging.basicConfig(
 	format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
+
+load_dotenv(dotenv_path=TWITTER_KEY_FILE)
 
 APP_KEY = os.environ["API_KEY"]
 APP_SECRET = os.environ["API_SECRET"]
@@ -148,21 +152,3 @@ class TwitterParser():
 
 		with open(path, "w") as f:
 			json.dump(tweets, f)
-
-
-if __name__ == "__main__":
-	parser = argparse.ArgumentParser(description="Fetches users latest tweets from Twitter")
-	parser.add_argument("handle", help="Twitter handle")
-	parser.add_argument("--fetch", action="store_true", help="Fetch new tweets since previous run")
-	parser.add_argument("--parse", nargs=2, metavar=("date", "number of months"), help="Parse stored tweets as training data")
-	args = parser.parse_args()
-	twitter_parser = TwitterParser(args.handle)
-
-	if args.fetch:
-		twitter_parser.fetch_new_tweets()
-
-	elif args.parse:
-		start_month = args.parse[0]
-		number_of_months = int(args.parse[1])
-		res = twitter_parser.save_training_data(start_month, number_of_months)
-		print(res)

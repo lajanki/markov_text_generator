@@ -1,26 +1,26 @@
 {
   "@realDonaldTrump": {
-    "created_at": "Tue Jun 09 14:23:32 +0000 2020",
-    "id": 1270360886297989120,
-    "id_str": "1270360886297989120",
-    "full_text": "\u201cDefunding Police would be good for Robbers &amp; Rapists.\u201d @SenBillCassidy",
+    "created_at": "Wed Jun 10 14:56:15 +0000 2020",
+    "id": 1270731508538580993,
+    "id_str": "1270731508538580993",
+    "full_text": "Incredible!  @FoxNews just took Congressional Hearing off the air just prior to important witness statements. More like CNN!!! Fox is lost!!!",
     "truncated": false,
     "display_text_range": [
       0,
-      75
+      141
     ],
     "entities": {
       "hashtags": [],
       "symbols": [],
       "user_mentions": [
         {
-          "screen_name": "SenBillCassidy",
-          "name": "U.S. Senator Bill Cassidy, M.D.",
-          "id": 1017500185356853248,
-          "id_str": "1017500185356853248",
+          "screen_name": "FoxNews",
+          "name": "Fox News",
+          "id": 1367531,
+          "id_str": "1367531",
           "indices": [
-            60,
-            75
+            13,
+            21
           ]
         }
       ],
@@ -41,8 +41,8 @@
     "place": null,
     "contributors": null,
     "is_quote_status": false,
-    "retweet_count": 19810,
-    "favorite_count": 84335,
+    "retweet_count": 23504,
+    "favorite_count": 83589,
     "favorited": false,
     "retweeted": false,
     "lang": "en"

@@ -1,8 +1,9 @@
 *.pyc
+*.log
 __pycache__/
 twitter_keys.json
 twitter_keys.env
 venv/
 .vscode
-src/parsers/tweet_parser/@*
+twitter/@*
 data/
