@@ -8,7 +8,6 @@ by joining the rightmost n-2 keywords with the selected successor. Since keys in
 are ngrams of length n-1, this method will result in valid keys.
 """
 
-import codecs
 import os
 import random
 import simplejson as json  # faster decoding than the standard llibrary module
@@ -46,7 +45,7 @@ class Generator():
 
 		# To complete a sentence, continue adding words until one that ends with a punctuation mark
 		if complete_sentence:
-			while not word.endswith((".", "!", "?", "...", u"…")):
+			while not word.endswith((".", "!", "?", "...", "…")):
 				word, key = self.next_word(key)
 				words.append(word)
 
@@ -93,7 +92,7 @@ class Generator():
 	def get_cache_data(self):
 		"""Get the contents of the cache file as a dictionary."""
 		try:
-			with codecs.open(self.path_to_cache_file, "r", "utf8") as f:
+			with open(self.path_to_cache_file) as f:
 				train_data = json.load(f)
 				return train_data
 		except FileNotFoundError:
