@@ -33,7 +33,7 @@ class BaseParser(abc.ABC):
 	def save(self):
 		"""Store content to output file."""
 		if not self.content:
-			raise ValueError("ERROR: nothing to save, run parse first")
+			raise RuntimeError("ERROR: nothing to save, run parse first")
 
 		output = os.path.join(utils.BASE, "data", "training", self.path_to_ofile)  
 		with open(output, "w") as f:

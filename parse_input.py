@@ -39,8 +39,8 @@ if __name__ == "__main__":
 		elif args.parse:
 			start_month = args.parse[0]
 			number_of_months = int(args.parse[1])
-			res = parser.save_training_data(start_month, number_of_months)
-			print(res)
+			res = parser.parse(start_month, number_of_months)
+			parser.save(res)
 
 	elif args.steam:
 		parser = src.parsers.steam_parser.SteamParser(args.steam)

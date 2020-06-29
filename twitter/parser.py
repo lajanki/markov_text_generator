@@ -76,7 +76,7 @@ class TwitterParser():
 		self.write_tweets(response)
 		_write_tweet_metadata(tweet_metadata)
 
-	def save_training_data(self, start_date, months):
+	def parse(self, start_date, months):
 		"""Parse selected saved tweets responses into a single string to be used for training.
 		Args:
 			start_date (str): name of the monthly folder for which to start parsing backwards
@@ -98,6 +98,14 @@ class TwitterParser():
 				parsed_texts.extend(tweet_texts)
 		
 		return "\n".join(parsed_texts)
+
+	def save(self, content):
+		"""Save parsed training data to data/training."""
+		output = os.path.join(RELATIVE_BASE, "..", "data", "training", "{}.txt".format(self.handle))
+		with open(output, "w") as f:
+			f.write(content)
+
+		print("Created a dump at", output)
 
 	def read_timeline_since(self, since_id):
 		"""Fetch (most recent) tweets from user. 
