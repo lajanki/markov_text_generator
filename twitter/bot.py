@@ -8,6 +8,7 @@
 
 
 import os
+import sys
 import argparse
 import random
 import logging
@@ -15,12 +16,15 @@ import logging
 import twython
 from dotenv import load_dotenv
 
-from src import generator
-
 
 RELATIVE_BASE = os.path.dirname(os.path.abspath(__file__))
 LOG_FILE = os.path.join(RELATIVE_BASE, "tweets.log")
 TWITTER_KEY_FILE = os.path.join(RELATIVE_BASE, "twitter_keys.env")
+
+# import src module by adding the root folder to sys.path.
+# A dirty hack to enable easier running from cron
+sys.path.insert(0, os.path.join(RELATIVE_BASE, ".."))
+from src import generator
 
 logging.basicConfig(
 	handlers=[logging.FileHandler(LOG_FILE), logging.StreamHandler()],
