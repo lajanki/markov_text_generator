@@ -18,7 +18,7 @@ if __name__ == "__main__":
 	parser.add_argument("--poem", help="Poem parser for https://allpoetry.com/classics/famous_poems", action="store_true")
 
 	subparsers = parser.add_subparsers(description="Twitter sub parser", dest="twitter")
-	parser_twitter = subparsers.add_parser("twitter", help="foo")
+	parser_twitter = subparsers.add_parser("twitter")
 
 	parser_twitter.add_argument("handle", help="Twitter handle")
 	parser_twitter.add_argument("--fetch", action="store_true", help="Fetch new tweets since previous run")

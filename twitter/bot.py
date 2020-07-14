@@ -46,17 +46,18 @@ def tweet_trumpet():
 
 	# replace any user mentions and urls
 	text = text.replace("@", "")
-	logging.info(text)
-	#client.update_status(status=text)
 
+	client.update_status(status=text)
+	logging.info(text)
+	
 def tweet_poem():
 	"""Generate and Tweet a poem."""
 	gen = generator.Generator("poems.dat")
 	paragrags = random.choice([2,3,4])
 	text = gen.generate_paragraphs(25, paragrags)
 
-	#client.update_status(status=text)
-	print(text)
+	client.update_status(status=text)
+	logging.info(text)
 
 
 if __name__ == "__main__":
