@@ -17,9 +17,8 @@ if __name__ == "__main__":
 	parser.add_argument("--steam", help="Steam game description parser", metavar="sample_size", type=int, default=50)
 	parser.add_argument("--poem", help="Poem parser for https://allpoetry.com/classics/famous_poems", action="store_true")
 
-	subparsers = parser.add_subparsers(description="Twitter sub parser", dest="twitter")
+	subparsers = parser.add_subparsers(description="Tweet parser sub commands", dest="twitter")
 	parser_twitter = subparsers.add_parser("twitter")
-
 	parser_twitter.add_argument("handle", help="Twitter handle")
 	parser_twitter.add_argument("--fetch", action="store_true", help="Fetch new tweets since previous run")
 	parser_twitter.add_argument("--parse", nargs=2, metavar=("date", "number of months"), help="Parse stored tweets as training data")
