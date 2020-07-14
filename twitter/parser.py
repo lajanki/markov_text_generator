@@ -79,12 +79,17 @@ class TwitterParser():
 	def parse(self, start_date, months):
 		"""Parse selected saved tweets responses into a single string to be used for training.
 		Args:
-			start_date (str): name of the monthly folder for which to start parsing backwards
+			start_date (str): folder name (ie. month in YYYY-MM) to start parsing from.
+				Alternatively the literal string 'previous_month' to start from
+				previous month as determined from current execution date.
 			month (int): number of months (ie. folders) to parse
 		Return:
 			Contents of the parsed tweets as a string.
 		"""
 		parsed_texts = []
+		if start_date == "previous_month":
+			start_date = (datetime.datetime.today() - relativedelta(months=1)).strftime("%Y-%m")
+
 		for i in range(months):
 			d = datetime.datetime.strptime(start_date, "%Y-%m") - relativedelta(months=i)
 	
@@ -105,7 +110,7 @@ class TwitterParser():
 		with open(output, "w") as f:
 			f.write(content)
 
-		print("Created a dump at", output)
+		logging.info("Created a new parsed tweet dump at %s", os.path.abspath(output))
 
 	def read_timeline_since(self, since_id):
 		"""Fetch (most recent) tweets from user. 
