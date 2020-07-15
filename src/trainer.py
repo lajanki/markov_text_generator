@@ -50,7 +50,7 @@ class Trainer():
 
 		# Store the result to the cache file
 		with open(self.cache_file, "w") as f:
-			json.dump(data, f, separators=(',', ':'))
+			json.dump(data, f, indent=4, separators=(',', ':'))
 
 		avg_key_length = self.compute_variation(data)
 		msg = "Model created at {}. Average key length: {:03.2f}".format(self.cache_file, avg_key_length)

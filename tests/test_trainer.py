@@ -2,8 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Test cases for src/trainer.py
-# Note that currently this creates a realDonaldTrump trainer (ie. running this will re-create
-# data/cache/realDonaldTrump.dat)
+
 
 import unittest
 from unittest.mock import patch, mock_open
@@ -13,19 +12,20 @@ from src import trainer
 from src import utils
 
 
+BASE =  os.path.dirname(__file__)
 
 class TrainerTestCase(unittest.TestCase):
 	"""Test cases for training a generator."""
 
 	@classmethod
 	def setUpClass(self):
-		self.trainer = trainer.Trainer("realDonaldTrump.txt")
-		self.trainer.train()
+		self.trainer = trainer.Trainer("foofile")
 
-	def test_cache_location(self):
-		"""Is output location for cache file in the data/cache folder?"""
-		expected = os.path.join(utils.BASE, "data", "cache", "realDonaldTrump.dat")
-		self.assertEqual(self.trainer.cache_file, expected)
+		# Manaully reset the training input and output file paths to existing files
+		self.trainer.path_to_train_file = os.path.join(BASE, "mock_train_file.txt")
+		self.trainer.cache_file = os.path.join(BASE, "mock_train_file.dat")
+
+		self.trainer.train()
 
 	def test_ngram_length(self):
 		"""Are created ngram of correct length?"""
