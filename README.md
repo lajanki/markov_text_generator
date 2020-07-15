@@ -19,22 +19,21 @@ pip install -r requirements.txt
 
 Using the program consists of two phases: training and generating.
 
-1. Training requires training data: a plain text file containing the text to mimic. Two sample files, a selection of fairytales and a set of Donald Trump's tweets are provided in `data/training` directory.
+1. Training requires training data: a plain text file containing the text to mimic. Two sample files, a selection of fairytales and a set of Donald Trump's tweets are provided in `data/training/` directory.
 
 To train a genrator run
 ```
-python main.py --train <train-data> <n>
+python main.py train <train-data> <n>
 ```
-where `<train-data>` is a training file in the training directory and `<n>` is the size of the ngram to split the text into. For instance,
+where `<train-data>` is a training file in the training directory `data/training/` and `<n>` is the size of the ngram to split the text into. If not specified, ngram size defaults to `3`. For instance,
 ```
-python main.py --train realDonaldTrump.txt
+python main.py train @realDonaldTrump.txt
 ```
-In this case `n` will default to `3`.
-This outputs a model `realDonaldTrump.dat` in `data/cache`. The model contains information about the ngrams and their successor (it's really just a json file of all n-1 successive words as keys and a list of successors as values)
+This outputs a model `@realDonaldTrump.dat` in `data/cache/`. The model contains information about the ngrams and their successor (it's really just a json file of all n-1 successive words as keys and a list of successors as values)
 
 2. To generate text using the above model, run
 ```
-python main.py --generate realDonaldTrump.dat 30 3
+python main.py generate @realDonaldTrump.dat 30 3
 ```
 This generates 3 paragraphs of about 30 words each (actual number of words is pulled from a normal distribution).
 
@@ -45,12 +44,12 @@ Unit tests can be run with
 python -m unittest tests/test*.py
 ```
 
-### Training data parsers
+### Parsers for training data
 Included are also a set of parsers to fetch input training data from various sources:
- 1. folders of plain text files in `data/training`
+ 1. folders of plain text files in `data/training/`
  2. famous poems from https://allpoetry.com/classics/famous_poems
  3. Steam store game descriptions
- 4. Tweets from a user's timeline
+ 4. Twitter timelines, see below for further instructions.
 
 To use one of the parsers, run `parse_input.py`. See
 ```
@@ -58,7 +57,29 @@ python parse_input.py -h
 ```
 for help.
 
-Running any of the above parsers will generate an output plain text file in `data/training` which can be used as an input to the trainer. Note that parsing tweets requires valid Twitter API keys and access tokens in `twitter_keys.json`, see https://developer.twitter.com/en/docs/basics/authentication/guides/access-tokens.html.
+Running any of the above parsers will generate an output plain text file in `data/training/` which can be used as an input to the trainer.
 
+#### Tweet parser
+Apart from the the above parsers there's also a Twitter parser for parsing a user's Twitter timeline as training source data. The parsers fetches tweets posted after a the tweet id in `twitter/tweet_metadata.json`. Twitter API has limits on how many tweets can be fetched, so it is recommended to run the parser on a daily basis.
 
+To get started, let's add @kanyewest as a source. First update the metadata file by adding a new handle with an initial, dummy values, of:
+```
+{
+  "@kanyewest": {
+    "created_at": "dummy date",
+    "id": 1
+}
+```
+Then, fetch tweets with
+```
+python parse_input.py twitter @kanyewest --fetch
+```
+This will store new tweets to a daily file in `twitter/@kanyewest/YYYY-MM/` and update `tweet_metadata.json` with the latest tweet fetched. The `id` value can also be set to a valid id as can be seen from the tweet url, but the Twitter API may not correctly fetch all tweets if the id is old enough.
 
+Raw tweets can then be parsed to a single text file suitable for training with
+```
+python parse_input.py twitter @kanyewest --parse 2020-06 2
+```
+which parsers 2 latest folders starting from 2020-06. Alternatively, `previous_month` can be used as the month value to start parsing from the previous month as computed from execution date.
+
+Note that parsing tweets requires valid Twitter API keys and access tokens in `twitter/twitter_keys.env`, see https://developer.twitter.com/en/docs/basics/authentication/guides/access-tokens.html.
