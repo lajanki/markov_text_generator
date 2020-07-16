@@ -47,9 +47,7 @@ def tweet_trumpet():
 	"""Generate and Tweet a realDonaldTrump text."""
 	gen = generator.Generator("@realDonaldTrump.dat")
 	text = gen.generate_paragraphs(25, 1)
-
-	# replace any user mentions and urls
-	text = text.replace("@", "")
+	text = "Trumpet:\n" + text.replace("@", "")
 
 	client.update_status(status=text)
 	logging.info(text)
